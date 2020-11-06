@@ -1,0 +1,102 @@
+镜像：
+docker images
+docker rmi imageid
+docker run (-it) （--name）镜像名或id  exit(退出并关闭容器) ctrl+p+q(退出不关闭)  docker attach 容器（重新进入容器与其交互）
+																		   docker exec -i(?)t 容器 命令（不进入容器执行命令）
+docker run -d (守护进程启动)
+
+docker run -it -p 主机端口：容器端口（指定端口运行容器-P随机端口）
+
+容器
+docker ps (-a -q)
+docker ps -l
+docker ps -n 3
+docker start  容器id 或 容器名
+docker stop
+docker kill
+docker rm
+docker rm -f $(docker ps -a -q)
+docker ps -a -q|xargs docker rm 
+
+
+log
+docker logs -t(显示时间) -f(追加的方式) --tail 3 容器id 或 容器名
+
+
+commit
+docker commit -m msg -a author 容器id 目标镜像名 （提交容器使之成为新的镜像）
+
+inspect（重要）
+docker inspect 容器id
+
+
+docker数据卷（数据持久化）
+docker cp 容器:容器内文件路径 主机存储路径（从容器copy到宿主机）
+docker cp 主机存储路径 容器:容器内文件路径（从宿主机copy到容器）
+	宿主机与容器文件共享
+		docker run -it -v /宿主机绝对路径目录：容器内目录(:ro read only) 镜像名 ro容器路径内的文件不能修改不能新建文件
+		例：启动mysql
+		docker run -p 3306:3306 --name mysql \
+		-v /mydata/mysql/log:/var/log/mysql \
+		-v /mydata/mysql/data:/var/lib/mysql \
+		-v /mydata/mysql/conf:/etc/mysql \
+		-e MYSQL_ROOT_PASSWORD=root  \
+		-d mysql:5.7
+
+		参数说明
+		-p 3306:3306：将容器的3306端口映射到主机的3306端口
+		-v /mydata/mysql/conf:/etc/mysql：将配置文件夹挂在到主机
+		-v /mydata/mysql/log:/var/log/mysql：将日志文件夹挂载到主机
+		-v /mydata/mysql/data:/var/lib/mysql/：将数据文件夹挂载到主机
+		-e MYSQL_ROOT_PASSWORD=root：初始化root用户的密码
+
+	容器与容器文件共享
+		docker run -it --name container02 --volumes-from container01 镜像名或id 
+		（container02与container01的数据卷内容共享比如配置信息等，只要还有容器使用这些配置 这些配置就不会因为某个容器的退出而删除）
+
+dockerfile
+dockerfile是构建docker镜像的描述文件
+
+一、新建：编写dockerfile文件
+二、build：docker build -f /dockerfiledir/dockerfile -t myimage:tag .(当前路径)(编译dockerfile文件生成image镜像)
+	docker执行dockerfile的大致流程
+		1、docker从基础镜像（比如：scratch）运行一个容器
+		2、执行file中的一条指令对容器作出修改
+		3、执行一个类似commit的操作提交一个修改后的新的镜像
+		4、docker再给予提交的镜像启动一个新的容器
+		5、执行file中的下一条指令...直到所有指令执行完成
+
+三、docker run
+
+dockerfile保留字：
+	FROM 指定基础镜像
+	MAINTAINER 镜像作者和作者邮箱author<email>
+	RUN 容器构建时所需执行的命令
+	EXPOSE 容器对外暴露的端口号
+	WORKDIR 制定创建容器后，终端默认登录进来的工作目录，一个落脚点
+	ENV 指定一个环境变量ENV WORK_DIR /usr/local/..
+		之后的run命令获其他需要这个变量的地方可以直接引用 WORKDIR $WORK_DIR
+	ADD 将宿主机目录下的文件拷贝进镜像且add命令会自动处理url和解压tar包
+	COPY 类似add 拷贝文件和目录到镜像中
+	VOLUME 指定容器数据卷 用于数据保存和持久化
+	CMD 制定容器启动时要执行的命令，多次定义会覆盖，为docker run 提供一个默认参数 执行时以docker run 后面的参数为准
+	ENTRYPOINT 类似cmd运行时不会被docker run的参数覆盖而是把在entrypoint的基础上追加 docker run的参数
+	ONBUILD 当构建一个子类的dockerfile时，父镜像定义的onbuild被触发
+
+
+docker安装mysql5.7：
+	下载mysql5.7的docker镜像：
+		docker pull mysql:5.7
+
+	使用docker命令启动：
+		docker run -p 3306:3306 --name mysql \
+		-v /mydata/mysql/log:/var/log/mysql \
+		-v /mydata/mysql/data:/var/lib/mysql \
+		-v /mydata/mysql/conf/my.cnf:/etc/mysql/conf.d/mysql.cnf \
+		-e MYSQL_ROOT_PASSWORD=root  \
+		-d mysql:5.7
+
+	进入运行mysql的docker容器：
+		docker exec -it mysql /bin/bash
+	连接数据库
+		mysql -u root -p
