@@ -1,0 +1,34 @@
+systemctl status firewalld查看当前防火墙状态
+systemctl stop firewalld关闭当前防火墙
+systemctl disable firewalld开机防火墙不启动
+切换到root用户: 	su root
+
+--卸载openjdk 安装sunjdk--
+
+	输入：rpm -qa | grep jdk  会查询出系统自带的OpenJDK及版本
+		[root@localhost /]# rpm -qa |grep jdk
+		java-1.7.0-openjdk-headless-1.7.0.51-2.4.5.5.el7.x86_64
+		java-1.7.0-openjdk-1.7.0.51-2.4.5.5.el7.x86_64
+	删除openJDK版本 及其他插件
+		rpm -e --nodeps java-1.7.0-openjdk-headless-1.7.0.51-2.4.5.5.el7.x86_64
+		rpm -e --nodeps java-1.7.0-openjdk-1.7.0.51-2.4.5.5.el7.x86_64
+
+	下载rpm安装文件并上传到服务器
+
+		rpm -ivh jdk-8u202-linux-x64.rpm 安装
+		java -version 检查安装是否成功
+
+	配置环境变量
+		vim /etc/profile
+
+		# 末尾追加以下内容
+		export JAVA_HOME=/usr/java/default
+		export PATH=$JAVA_HOME/bin:$PATH
+		export CLASSPATH=.:$JAVA_HOME/lib/dt.jar:$JAVA_HOME/lib/tools.jar
+
+	使配置生效
+		source /etc/profile
+
+	查看是否配置成功
+		echo $JAVA_HOME
+
